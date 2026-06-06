@@ -1,7 +1,6 @@
 from pathlib import Path
 import cv2
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
 import logging
@@ -217,9 +216,16 @@ def chunk_paths_by_memory(paths, chunk_bytes=5 * 1024**3):
     return chunks
 
 
-def main(peadirpath, max_workers=8, limb_wigth=24, allp_num=1360, chunk_bytes=5 * 1024**3,debug=False):
+def main(peadirpath:str, max_workers=int|None, chunk_bytes=5 * 1024**3,limb_wigth=24, allp_num=1360, debug=False):
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    from time import time
+    import pandas as pd
+    import datetime
+    if debug:
+        print(f"{__file__.split("\\")[-1]}process start {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')}")
+        st=time()
+        print(f"--seeing_main_Debug--\nselected:{peadirpath}\nmax_workers:{max_workers}\nchunk_bytes:{chunk_bytes/1024**3}GB")
     peadirpath = Path(peadirpath)
-    print(f"--seeing_main_Debug--\nselected:{peadirpath}\nmax_workers:{max_workers}\nchunk_bytes:{chunk_bytes/1024**3}GB")
     paths = []
     for sub in peadirpath.iterdir():
         if sub.is_dir():
@@ -248,20 +254,18 @@ def main(peadirpath, max_workers=8, limb_wigth=24, allp_num=1360, chunk_bytes=5 
                 p = futures[fut]
                 path, val = fut.result()
                 all_results.setdefault(p.parent.name, []).append(val)
-
         preloaded.clear()
+        if debug:
+            contents=["mean","min","max","std","median"]
+            Df=pd.DataFrame({cdir:pd.Series(all_results[cdir]).agg(contents) for cdir in all_results.keys()})
+            print(Df)
+            print(f"Total time: {time() - st:.2f} sec")
     return all_results
 
 
 if __name__ == "__main__":
     from tkinter.filedialog import askdirectory
-    from time import time
-    import pandas as pd
     peadirpath = askdirectory(title="画像が入っているフォルダを選択してください")
-    st = time()
-    result = main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360, chunk_bytes=5 * 1024**3,debug=True)
-    contents=["mean","min","max","std","median"]
-    Df=pd.DataFrame({cdir:pd.Series(result[cdir]).agg(contents) for cdir in result.keys()})
-    print(Df)
-    print(f"Total time: {time() - st:.2f} sec")
+    max_chunk_GB=5
+    result = main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360, chunk_bytes=max_chunk_GB * 1024**3,debug=True)
     

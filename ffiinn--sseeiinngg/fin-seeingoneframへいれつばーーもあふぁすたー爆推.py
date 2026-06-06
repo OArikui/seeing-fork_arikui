@@ -331,10 +331,13 @@ def process_single_image(img, path, limb_wigth=24, allp_num=1360):
         logging.exception(f"Unexpected error for {path}: {e}")
         return path, None
 
-def main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360,
-         max_chunk_bytes=5 * 1024**3, sample_per_bin=20,debug=False):
-    print(f"--seeing_main_Debug--\nselected:{peadirpath}\nmax_workers:{max_workers}")
-    st = time() if debug else None
+def main(peadirpath:str, max_workers=int|None,max_chunk_bytes=5 * 1024**3, sample_per_bin=20,limb_wigth=24, allp_num=1360,debug=False):
+    from time import time
+    import datetime
+    if debug:
+        print(f"{__file__.split("\\")[-1]}process start {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')}")
+        print(f"--seeing_main_Debug--\nselected:{peadirpath}\nmax_workers:{max_workers}")
+        st = time()
     peadirpath = Path(peadirpath)
 
     # collect paths (same as before)
@@ -378,12 +381,14 @@ def main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360,
             success = arr.size
             fail = len(vals) - success
             logging.info(f"group={group} total={len(vals)} success={success} fail={fail}")
-    print(f"Total time: {time() - st:.2f} sec") if debug else None
+            contents=["mean","min","max","std","median"]
+            Df=pd.DataFrame({cdir:pd.Series(all_results[cdir]).agg(contents) for cdir in all_results.keys()})
+            print(Df)
+        print(f"Total time: {time() - st:.2f} sec")
     return all_results
 
 if __name__ == "__main__":
     from tkinter.filedialog import askdirectory
-    #peadirpath = askdirectory(title="画像が入っているフォルダを選択してください")
-    peadirpath = r"J:\2025-07-20Z\2025-07-20-PL"
-    main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360,
-         max_chunk_bytes=10 * 1024**3, sample_per_bin=20,debug=True)
+    peadirpath = askdirectory(title="画像が入っているフォルダを選択してください")
+    max_chunk_GB=10
+    main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360,max_chunk_bytes=max_chunk_GB * 1024**3, sample_per_bin=20,debug=True)

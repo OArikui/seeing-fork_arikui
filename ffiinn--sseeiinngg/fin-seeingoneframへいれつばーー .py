@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 import cv2
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
 from decimal import Decimal, ROUND_HALF_UP
 from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
 
@@ -146,8 +144,16 @@ def gather_image_paths(root_dir, exts=(".jpg", ".jpeg", ".png", ".tiff")):
     return groups
 
 
-def main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360,debug=False):
-    print(f"--seeing_main_Debug--\nselected:{peadirpath}\nmax_workers:{max_workers}")
+def main(peadirpath:str, max_workers:int|None, limb_wigth=24, allp_num=1360,debug=False):
+    from time import time
+    import pandas as pd
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    from tqdm import tqdm
+    import datetime
+    if debug:
+        print(f"{__file__.split("\\")[-1]}process start {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')}")
+        print(f"--seeing_main_Debug--\nselected:{peadirpath}\nmax_workers:{max_workers}") 
+        st = time()
     groups = gather_image_paths(peadirpath)
     results = {name: [] for name in groups}
     # 全ファイル数を数えて tqdm の total に使う
@@ -170,19 +176,16 @@ def main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360,debug=False)
                 val = None
             if val is not None:
                 results[group_name].append(val)
+    if debug:
+        contents=["mean","min","max","std","median"]
+        Df=pd.DataFrame({cdir:pd.Series(results[cdir]).agg(contents) for cdir in results.keys()})
+        print(Df)
+        print(f"seeing_one_frameの解析時間:{time()-st}秒")
     return results
 
 
 if __name__ == "__main__":
     from tkinter.filedialog import askdirectory
-    from time import time
-    import pandas as pd
     peadirpath = askdirectory(title="画像が入っているフォルダを選択してください")
-    st = time()
     # max_workers を None にすると CPU コア数に合わせる
     results = main(peadirpath, max_workers=None, limb_wigth=24, allp_num=1360,debug=True)#resulltはdict
-    contents=["mean","min","max","std","median"]
-    Df=pd.DataFrame({cdir:pd.Series(results[cdir]).agg(contents) for cdir in results.keys()})
-    print(Df)
-    print(f"seeing_one_frame の解析時間: {time() - st:.2f} 秒")
-    

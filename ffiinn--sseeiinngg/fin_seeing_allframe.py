@@ -64,37 +64,46 @@ def seeing_show(readed_img,x,y,cir):
     ax.add_patch(circle)
     plt.show()
 
-if __name__ == "__main__":
-    from tkinter.filedialog import askdirectory as ask
-    import os
+def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
+    from time import time
     import pandas as pd
     from pathlib import Path
     from tqdm import tqdm
     from glob import glob
-    debug=False
-    show=[False,""]#見たい画像のパスを入れてください
-    dirname=ask(title="フォルダを選択してください。(選択dirのサブディレクトリ内の画像が処理されます。)")   
-    from time import time
-    st=time()
-    p = Path(dirname)
+    import datetime
+    if debug:
+        print(f"{__file__.split("\\")[-1]}process start {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')}")
+        print(f"--seeing_main_Debug--\nselected:{peadirpath}") 
+        st = time()
+    p = Path(peadirpath)
     results={child.name:[] for child in p.iterdir() if child.is_dir()}
-    files = [glob(dirname+"\\"+cdir+"\\*.tiff", recursive=True) for cdir in results.keys()]
+    files = [glob(peadirpath+"\\"+cdir+"\\*.tiff", recursive=True) for cdir in results.keys()]
     with tqdm(total=sum([len(file_list) for file_list in files]), desc="Prossesing files") as pbar:
         for i,filelst in enumerate(files):
             rere=[]
             for file in filelst:
                 readed_img=cv2.imread(file, cv2.IMREAD_UNCHANGED)
-                cir_stat=MIN2_ver1(((readed_img >> 8).astype("uint8")),n=10,light_threshold=50,limb_wigth=24,show=show[0],debug=False)
-                if show[0] and file.endswith(show[1]):
-                    std,x,y=seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=True,debug=debug)
-                    seeing_show(readed_img,x,y,cir_stat)
-                else:
-                    std=seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,debug=debug)
+                cir_stat=MIN2_ver1(((readed_img >> 8).astype("uint8")),n=10,light_threshold=50,limb_wigth=24)
+                std=seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,debug=debug)
                 rere.append(std)
                 pbar.update(1)
             results[list(results.keys())[i]]=rere
-    contents=["mean","min","max","std","median"]
-    Df=pd.DataFrame({cdir:pd.Series(results[cdir]).agg(contents) for cdir in results.keys()})
-    print(Df)
-    print(f"seeing_one_frameの解析時間:{time()-st}秒")
-    
+    if debug:
+        contents=["mean","min","max","std","median"]
+        Df=pd.DataFrame({cdir:pd.Series(results[cdir]).agg(contents) for cdir in results.keys()})
+        print(Df)
+        print(f"seeing_one_frameの解析時間:{time()-st}秒")
+    return results
+
+if __name__ == "__main__":
+    from tkinter.filedialog import askdirectory,askopenfilename
+    show_test_frame=False
+    if show_test_frame:
+        picname=askopenfilename(title="ファイルを選択してください",filetypes=["*.tiff","*.jpg","*,png"])
+        img=cv2.imread(picname,cv2.IMREAD_UNCHANGED)
+        cir_stat=MIN2_ver1(((img >> 8).astype("uint8")))
+        std,x,y =seeing_one_frame(img,debug=True,show=True)
+        seeing_show(img,x,y,cir_stat)
+    else:
+        peadirpath=askdirectory(title="フォルダを選択してください。(選択dirのサブディレクトリ内の画像が処理されます。)")   
+        result,Df = main(peadirpath,debug=True)
