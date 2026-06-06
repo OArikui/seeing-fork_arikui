@@ -140,7 +140,7 @@ def MIN2_ignore_sunspots(readed_img,n=10,light_threshold=50,limb_wigth=24,show=F
         
     if show:
         show_circle([spots[i] for i in not_sunspots_idx],(cx,cy,r))
-    return cx,cy,r
+    return (cx,cy),r
 
 if __name__== "__main__":
     from tkinter.filedialog import askopenfilename

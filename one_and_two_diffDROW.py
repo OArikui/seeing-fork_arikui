@@ -25,7 +25,7 @@ def sengiri_fissec_edges(
     onex,oney=[],[]
     if file.endswith(".tiff" or ".tif"):
         lst = np.zeros(gap*8)
-        xc, yc, r = MIN2(file)
+        (xc, yc), r = MIN2(file)
         img= cv2.imread(file,cv2.IMREAD_UNCHANGED)
         for gaps in range(-gap , gap):
         

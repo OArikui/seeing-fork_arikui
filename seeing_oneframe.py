@@ -13,7 +13,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
     realrlst=[]
     min2rlst=[]
     x,y=[],[] if show else (None,None)
-    cx,cy,r=cir_stat
+    center,r=cir_stat
+    cx,cy=center
     if allp_num%4!=0:
         raise("allp_numは4の倍数にしてください")
     for i in range(int(-(allp_num/8)),int(allp_num/8)):
@@ -56,11 +57,11 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
 def seeing_show(readed_img,x,y,cir):
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
-    cx,cy,r=cir
+    center,r=cir
     figure, ax = plt.subplots()
     ax.imshow(readed_img, cmap='magma')
     ax.scatter(x, y, color='cyan', label='Detected edge points', s=10)
-    circle = patches.Circle((cx, cy), r, fill=False, edgecolor='yellow', linewidth=2)
+    circle = patches.Circle(center, r, fill=False, edgecolor='yellow', linewidth=2)
     ax.add_patch(circle)
     plt.show()
 
@@ -80,7 +81,7 @@ if __name__ == "__main__":
         std,x,y=seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=True,debug=debug)
         print(f"std:{std}")
         if debug:
-            print(pd.DataFrame({"cx":cir_stat[1],"cy":cir_stat[2],"r":cir_stat[0]},index=[0]))
+            print(pd.DataFrame({"cx":cir_stat[0][0],"cy":cir_stat[0][1],"r":cir_stat[1]},index=[0]))    
             Df = pd.DataFrame({"x":pd.Series(x).agg(["min","max","mean","std"]),"y":pd.Series(y).agg(["min","max","mean","std"])})
             print(Df)
         print(f"seeing_one_frameの解析時間:{time()-st}秒") if debug else None
