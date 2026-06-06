@@ -6,8 +6,8 @@ import json
 import traceback
 from datetime import datetime
 from typing import Any, Callable, List, Sequence
-
-DB_PATH = "results.db"          # 保存先DBファイル（必要に応じて変更）
+db_title=""
+DB_PATH = __file__.replace(__file__.split("\\")[-1],"data_souces\\"+db_title)+".db"          # 保存先DBファイル（必要に応じて変更）
 REPEATS = 5                     # 各組み合わせの繰り返し回数
 WARMUP = 1                      # 各組み合わせのウォームアップ回数
 MIN_TIME = 0.0                  # 0.0なら無効。>0なら合計実行時間がこの秒数以上になるまで繰り返す
