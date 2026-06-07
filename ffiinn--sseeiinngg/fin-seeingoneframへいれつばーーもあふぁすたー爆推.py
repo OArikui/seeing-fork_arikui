@@ -233,7 +233,8 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360,sec
         if samples.size == 0:
             raise ("sample size is zero")
         else:
-            diff = np.diff(np.gradient(samples.astype(np.float64)))
+            grad = np.gradient(samples.astype(np.float64))
+            diff = np.diff(grad[:np.argmax(grad)])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
@@ -250,7 +251,8 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360,sec
         if samples.size == 0:
             raise ("sample size is zero")
         else:
-            diff = np.diff(np.gradient(samples.astype(np.float64)))
+            grad = np.gradient(samples.astype(np.float64))
+            diff = np.diff(grad[np.argmax(grad):])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
@@ -268,7 +270,8 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360,sec
         if samples.size == 0:
             raise ("sample size is zero")
         else:
-            diff = np.diff(np.gradient(samples.astype(np.float64)))
+            grad = np.gradient(samples.astype(np.float64))
+            diff = np.diff(grad[:np.argmax(grad)])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
@@ -285,7 +288,8 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360,sec
         if samples.size == 0:
             raise ("sample size is zero")
         else:
-            diff = np.diff(np.gradient(samples.astype(np.float64)))
+            grad = np.gradient(samples.astype(np.float64))
+            diff = np.diff(grad[np.argmax(grad):])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:

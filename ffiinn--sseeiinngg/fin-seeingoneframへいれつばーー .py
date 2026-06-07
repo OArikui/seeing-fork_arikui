@@ -8,8 +8,8 @@ from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
 def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
     """
     高速化版 seeing_one_frame
-    - Decimal を使わず numpy の丸めを使用
     - allp_num は 4 の倍数であることを前提
+    - 1回微分の最大の点の外側で2回微分の最大を探す
     """
     (cx,cy),r = cir_stat
     if allp_num % 4 != 0:
@@ -41,7 +41,7 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
             raise ("sample size is zero")
         else:
             grad = np.gradient(samples.astype(np.float64))#一回微分
-            diff = np.diff(grad)#２回微分
+            diff = np.diff(grad[:np.argmax(grad)])#２回微分
             # argmax が空配列になる可能性を考慮
             if diff.size == 0:
                 raise ("sample size is zero")
@@ -57,7 +57,7 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
             raise ("sample size is zero")
         else:
             grad = np.gradient(samples.astype(np.float64))
-            diff = np.diff(grad)
+            diff = np.diff(grad[np.argmax(grad):])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
@@ -73,7 +73,7 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
             raise ("sample size is zero")
         else:
             grad = np.gradient(samples.astype(np.float64))
-            diff = np.diff(grad)
+            diff = np.diff(grad[:np.argmax(grad)])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
@@ -88,7 +88,7 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
             raise ("sample size is zero")
         else:
             grad = np.gradient(samples.astype(np.float64))
-            diff = np.diff(grad)
+            diff = np.diff(grad[np.argmax(grad):])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
