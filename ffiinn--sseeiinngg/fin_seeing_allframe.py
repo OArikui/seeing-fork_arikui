@@ -10,6 +10,33 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
     show:各点の座標を返します。
     debug:途中経過を表示するか
     """
+    def where_diff_grad_smale(img:np.ndarray,
+                            min2_edge:tuple,#(x,y)
+                            sample_lib:list, #(startpoint(x,y),endpoint(x,y))
+                            cir_stat:tuple,#(cx,cy),r
+                            gradindx:float|int|None,
+                            diffindx:float|int|None,
+                            error:str="None",
+                            title:str="None"):
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as patches
+        """主にdebug用です。sampleが画像上のどこなのかを見せてくれます。"""
+        (cx,cy),r=cir_stat
+        fig, ax = plt.subplots()
+        ax.imshow(img, cmap='magma')
+        ax.scatter( min2_edge[0], min2_edge[1], color='cyan', label='MIN edge', s=10)
+        ax.plot( sample_lib, color='green', label='sample', alpha=0.5)
+        ax.add_patch(patches.Circle((cx, cy), r, fill=False, edgecolor='yellow', linewidth=2))
+        if gradindx is not None:
+            gradxy=sample_lib[0][0]+gradindx if sample_lib[0][0]!=sample_lib[1][0] else sample_lib[0][1]+gradindx
+            ax.scatter( gradxy[0], gradxy[1], color='red', label='Gradient max-first', s=10)
+        if diffindx is not None:
+            diffxy=sample_lib[0][0]+diffindx if sample_lib[0][0]!=sample_lib[1][0] else sample_lib[0][1]+diffindx
+            ax.scatter( diffxy[0], diffxy[1], color='blue', label='Difference max-second', s=10)
+        fig.text(0.99, 0.01, f'error reason: {error}', ha='right', va='bottom', fontsize=15, color='gray')
+        fig.suptitle(title)
+        ax.legend()
+        plt.show(block=True)
     realrlst=[]
     min2rlst=[]
     x,y=[],[] if show else (None,None)
@@ -22,34 +49,50 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
         min2r=Decimal(str(min2r)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)#整数に四捨五入、roundは銀行丸目なので注意
         min2r=float(min2r)#decimalはfloatと計算できないのでfloatに変換
         #L
-        samples=readed_img[int(cy+i),int(cx-min2r-limb_wigth):int(cx-min2r+limb_wigth)]
-        fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
-        realindx=np.argmax(np.diff(np.gradient(samples[:fmaxindex])))+0.5#diffで要素が減る分
-        realrlst+=[min2r+realindx-limb_wigth]
+        try:
+            samples=readed_img[int(cy+i),int(cx-min2r-limb_wigth):int(cx-min2r+limb_wigth)]
+            fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
+            realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
+            realrlst+=[min2r+realindx-limb_wigth]
+        except ValueError as e:
+            where_diff_grad_smale(readed_img,(cx-min2r,cy+i),[(cx-min2r-limb_wigth,cy+i),(cx-min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"L_error") if debug else None
+            print(f"L_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None 
         if show:
             x+=[cx-min2r-limb_wigth+realindx]
             y+=[cy+i]
         #R
-        samples=readed_img[int(cy+i),int(cx+min2r-limb_wigth):int(cx+min2r+limb_wigth)]
-        fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
-        realindx=np.argmax(np.diff(np.gradient(samples[fmaxindex:])))+0.5#diffで要素が減る分
+        try:
+            samples=readed_img[int(cy+i),int(cx+min2r-limb_wigth):int(cx+min2r+limb_wigth)]
+            fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
+            realindx=np.argmax(np.diff((samples[fmaxindex:])))+0.5#diffで要素が減る分
+        except ValueError as e:
+            where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"R_error") if debug else None
+            print(f"R_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx+min2r-limb_wigth+realindx]
             y+=[cy+i]
         #T
-        samples=readed_img[int(cy-min2r-limb_wigth):int(cy-min2r+limb_wigth),int(cx+i)]
-        fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
-        realindx=np.argmax(np.diff(np.gradient(samples[:fmaxindex])))+0.5#diffで要素が減る分
+        try:
+            samples=readed_img[int(cy-min2r-limb_wigth):int(cy-min2r+limb_wigth),int(cx+i)]
+            fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
+            realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
+        except ValueError as e:
+            where_diff_grad_smale(readed_img,(cx,cy-min2r),[(cx-limb_wigth,cy-min2r),(cx+limb_wigth,cy-min2r)],cir_stat,None,None,str(e),"T_error") if debug else None
+            print(f"T_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx+i]
             y+=[cy-min2r-limb_wigth+realindx]
         #B
-        samples=readed_img[int(cy+min2r-limb_wigth):int(cy+min2r+limb_wigth),int(cx+i)]
-        fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
-        realindx=np.argmax(np.diff(np.gradient(samples[fmaxindex:])))+0.5#diffで要素が減る分
-        realrlst+=[min2r+realindx-limb_wigth]
+        try:
+            samples=readed_img[int(cy+min2r-limb_wigth):int(cy+min2r+limb_wigth),int(cx+i)]
+            fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
+            realindx=np.argmax(np.diff(samples[fmaxindex:]))+0.5#diffで要素が減る分
+            realrlst+=[min2r+realindx-limb_wigth]
+        except ValueError as e:
+            where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"B_error") if debug else None
+            print(f"B_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         if show:
             x+=[cx+i]
             y+=[cy+min2r-limb_wigth+realindx]
@@ -87,7 +130,7 @@ def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
             rere=[]
             for file in filelst:
                 readed_img=cv2.imread(file, cv2.IMREAD_UNCHANGED)
-                cir_stat=MIN2_ver1(((readed_img >> 8).astype("uint8")),n=10,light_threshold=50,limb_wigth=24)
+                cir_stat=MIN2_ver1(((readed_img >> 8).astype("uint8")),n=10,light_threshold=50,limb_wigth=24,show=True)
                 std=seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,debug=debug)
                 rere.append(std)
                 pbar.update(1)
@@ -101,7 +144,7 @@ def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
 
 if __name__ == "__main__":
     from tkinter.filedialog import askdirectory,askopenfilename
-    show_test_frame=True
+    show_test_frame=False
     if show_test_frame:
         picname=askopenfilename(title="ファイルを選択してください",filetypes=[("Image files", "*.jpg;*.jpeg;*.png;*.tiff")])
         img=cv2.imread(picname,cv2.IMREAD_UNCHANGED)
