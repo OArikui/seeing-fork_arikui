@@ -7,7 +7,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
     reimg:cv2で読み込んだ画像を渡してください
     cir_stat:MIN2_ignore_sunspotsの返り値を渡してください。
     limb_wigth: limbの解析幅
-    show:解析を図示するか
+    show:各点の座標を返します。
     debug:途中経過を表示するか
     """
     realrlst=[]
@@ -23,28 +23,32 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
         min2r=float(min2r)#decimalはfloatと計算できないのでfloatに変換
         #L
         samples=readed_img[int(cy+i),int(cx-min2r-limb_wigth):int(cx-min2r+limb_wigth)]
-        realindx=np.argmax(np.diff(np.gradient(samples)))+0.5#diffで要素が減る分
+        fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
+        realindx=np.argmax(np.diff(np.gradient(samples[:fmaxindex])))+0.5#diffで要素が減る分
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx-min2r-limb_wigth+realindx]
             y+=[cy+i]
         #R
         samples=readed_img[int(cy+i),int(cx+min2r-limb_wigth):int(cx+min2r+limb_wigth)]
-        realindx=np.argmax(np.diff(np.gradient(samples)))+0.5#diffで要素が減る分
+        fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
+        realindx=np.argmax(np.diff(np.gradient(samples[fmaxindex:])))+0.5#diffで要素が減る分
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx+min2r-limb_wigth+realindx]
             y+=[cy+i]
         #T
         samples=readed_img[int(cy-min2r-limb_wigth):int(cy-min2r+limb_wigth),int(cx+i)]
-        realindx=np.argmax(np.diff(np.gradient(samples)))+0.5#diffで要素が減る分
+        fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
+        realindx=np.argmax(np.diff(np.gradient(samples[:fmaxindex])))+0.5#diffで要素が減る分
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx+i]
             y+=[cy-min2r-limb_wigth+realindx]
         #B
         samples=readed_img[int(cy+min2r-limb_wigth):int(cy+min2r+limb_wigth),int(cx+i)]
-        realindx=np.argmax(np.diff(np.gradient(samples)))+0.5#diffで要素が減る分
+        fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
+        realindx=np.argmax(np.diff(np.gradient(samples[fmaxindex:])))+0.5#diffで要素が減る分
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx+i]
@@ -97,12 +101,12 @@ def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
 
 if __name__ == "__main__":
     from tkinter.filedialog import askdirectory,askopenfilename
-    show_test_frame=False
+    show_test_frame=True
     if show_test_frame:
-        picname=askopenfilename(title="ファイルを選択してください",filetypes=["*.tiff","*.jpg","*,png"])
+        picname=askopenfilename(title="ファイルを選択してください",filetypes=[("Image files", "*.jpg;*.jpeg;*.png;*.tiff")])
         img=cv2.imread(picname,cv2.IMREAD_UNCHANGED)
         cir_stat=MIN2_ver1(((img >> 8).astype("uint8")))
-        std,x,y =seeing_one_frame(img,debug=True,show=True)
+        std,x,y =seeing_one_frame(img,cir_stat,debug=True,show=True)
         seeing_show(img,x,y,cir_stat)
     else:
         peadirpath=askdirectory(title="フォルダを選択してください。(選択dirのサブディレクトリ内の画像が処理されます。)")   
