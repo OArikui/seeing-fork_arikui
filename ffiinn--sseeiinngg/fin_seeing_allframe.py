@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 from decimal import Decimal, ROUND_HALF_UP
-from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
+from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1v
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,debug=False):
     """
     reimg:cv2で読み込んだ画像を渡してください
@@ -14,12 +16,10 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
                             min2_edge:tuple,#(x,y)
                             sample_lib:list, #(startpoint(x,y),endpoint(x,y))
                             cir_stat:tuple,#(cx,cy),r
-                            gradindx:float|int|None,
-                            diffindx:float|int|None,
+                            gradindx:float|int=None,
+                            diffindx:float|int=None,
                             error:str="None",
                             title:str="None"):
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as patches
         """主にdebug用です。sampleが画像上のどこなのかを見せてくれます。"""
         (cx,cy),r=cir_stat
         fig, ax = plt.subplots()
