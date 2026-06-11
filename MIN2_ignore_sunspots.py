@@ -97,7 +97,7 @@ def MIN2_ignore_sunspots(readed_img:np.ndarray,n=10,light_threshold=50,filter_ti
     spots=cut_and_sampling(light_threshold)#spots=[[x1,y1],[x2,y2],...]の形式で、縁の点の座標を格納したlist
     cx,cy,r=fit_circle(spots)#一回目の円情報
     print(f"first circle{show_circle(spots,(cx,cy,r))}") if debug and show else None#一回目の円を表示debug用
-    for i in  range(filter_times):#何度か繰り返すことでふくすうの黒点にも対応
+    for filtime in  range(filter_times):#何度か繰り返すことでふくすうの黒点にも対応
         #===MIN2の外側の点を抽出===
         outside_spots=[]
         for i in range(len(spots)):
@@ -111,22 +111,26 @@ def MIN2_ignore_sunspots(readed_img:np.ndarray,n=10,light_threshold=50,filter_ti
             #===外側の点の円からlimb_wigthの範囲にない内側の点を抽出===
             sunspot=False
             print (f"外側の点の数:{len(outside_spots)},全体の点の数:{len(spots)}") if debug else None
-            for i in range(len(spots)):
-                x=spots[i][0]
-                y=spots[i][1]
-                if not spots[i] in outside_spots:#内側の点だけ
+            pop_queue=[]#削除する点のindexを格納するlist
+            for i, spot in enumerate(spots):
+                x=spot[0]
+                y=spot[1]
+                if not spot in outside_spots:#内側の点だけ
                     if (x-cxo)**2 > (y-cyo)**2:#円のRLTBのうちRLなら、
                         min2far = np.sqrt(ro**2-(y-cyo)**2)
                         print(f"x,y:{x,y} min2far:{min2far},y-cyo:{np.abs(cyo-y)}") if debug else None
                         if min2far-np.abs(cxo-x) > limb_wigth:
                             sunspot=True
-                            spots.pop(i)
+                            pop_queue.append(i)
                     else:#円のRLTBのうちTBなら
                         min2far = np.sqrt(ro**2-(x-cxo)**2)
                         print(f"x,y:{x,y} min2far:{min2far},x-cxo:{np.abs(cxo-x)}") if debug else None
                         if min2far-np.abs(cyo-y) > limb_wigth:
                             sunspot=True
-                            spots.pop(i)
+                            pop_queue.append(i)
+            # 削除する点を一括で削除
+            for i in reversed(pop_queue):
+                spots.pop(i)
             if sunspot:    
                 #黒点とみなされない点だけで円を作成
                 cx,cy,r=fit_circle(np.array(spots, dtype=float))
@@ -143,5 +147,5 @@ if __name__== "__main__":
     picpath=askopenfilename(title="画像を選択してください", filetypes=[("Image files", "*.jpg;*.jpeg;*.png;*.tiff")])
     from time import time
     start = time()
-    print("cx,cy,r=",MIN2_ignore_sunspots(cv2.imread(picpath,0),filter_times=2,show=False,debug=True))
+    print("cx,cy,r=",MIN2_ignore_sunspots(cv2.imread(picpath,0),filter_times=2,show=True,debug=True))
     print(f"処理時間:{time()-start}秒")
