@@ -58,6 +58,27 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
         ax.legend()
         plt.show(block=True)
         return None
+    def show_samples(limb_wigth,sample,place,e,gaps):
+                    #縁サンプルの折れ線
+                    fig, ax = plt.subplots()
+                    # タイトル
+                    fig.suptitle(f"{place}_{gaps}")
+                    fig.text(0.5, 0.92, f"error reason: {e}", ha='center')
+                    # 第2軸（右）
+                    ax.plot(sample, color="green", label="sample_ax1",linewidth=0.7,alpha=0.7)
+                    # 第1軸（左）
+                    ax2 = ax.twinx()
+                    ax2.plot(np.gradient(sample), label="grad(sample)_ax2",linewidth=0.7)
+                    ax2.plot(np.diff(np.gradient(sample)), label="diff(grad(sample))_ax2",linewidth=0.7)
+                    ax2.scatter(np.argmax(np.gradient(sample)), np.gradient(sample)[np.argmax(np.gradient(sample))], color="red", label="Gradient max(ax2)")
+                    ax2.scatter(np.argmax(np.diff(np.gradient(sample))), np.diff(np.gradient(sample))[np.argmax(np.diff(np.gradient(sample)))], color="blue", label="Difference max(ax2)")
+                    #min2の縁をプロット
+                    ax2.axvline(x=limb_wigth, color="gray", label="min2 edge", linestyle="--")
+                    # 凡例をまとめる
+                    lines1, labels1 = ax.get_legend_handles_labels()
+                    lines2, labels2 = ax2.get_legend_handles_labels()
+                    ax.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+                    plt.show(block=True)
     realrlst=[]
     min2rlst=[]
     x,y=[],[] if show else (None,None)
@@ -77,6 +98,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
             where_diff_grad_smale(readed_img,(cx-min2r,cy+i),[(cx-min2r-limb_wigth,cy+i),(cx-min2r+limb_wigth,cy+i)],cir_stat,fmaxindex,None,str(e),"L_error") if debug else None
+            show_samples(limb_wigth,samples,"L",str(e),i) if debug else None
             print(f"L_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None 
         if show:
             x+=[cx-min2r-limb_wigth+realindx]
@@ -88,6 +110,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             realindx=np.argmax(np.diff((samples[fmaxindex:])))+0.5#diffで要素が減る分
         except ValueError as e:
             where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,fmaxindex,None,str(e),"R_error") if debug else None
+            show_samples(limb_wigth,samples,"R",str(e),i) if debug else None
             print(f"R_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
@@ -99,6 +122,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
             realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
         except ValueError as e:
+            show_samples(limb_wigth,samples,"T",str(e),i) if debug else None
             where_diff_grad_smale(readed_img,(cx+i,cy-min2r),[(cx+i,cy-min2r-limb_wigth),(cx+i,cy-min2r+limb_wigth)],cir_stat,fmaxindex,None,str(e),"T_error") if debug else None
             print(f"T_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         realrlst+=[min2r+realindx-limb_wigth]
@@ -112,6 +136,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             realindx=np.argmax(np.diff(samples[fmaxindex:]))+0.5#diffで要素が減る分
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
+            show_samples(limb_wigth,samples,"B",str(e),i) if debug else None    
             where_diff_grad_smale(readed_img,(cx+i,cy+min2r),[(cx+i,cy+min2r-limb_wigth),(cx+i,cy+min2r+limb_wigth)],cir_stat,fmaxindex,None,str(e),"B_error") if debug else None
             print(f"B_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         if show:
