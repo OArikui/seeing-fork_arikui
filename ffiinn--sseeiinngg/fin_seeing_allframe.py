@@ -157,7 +157,7 @@ def seeing_show(readed_img,x,y,cir):
     ax.add_patch(circle)
     plt.show()
 
-def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
+def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False,show=False):
     from time import time
     import pandas as pd
     from pathlib import Path
@@ -176,7 +176,7 @@ def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
             rere=[]
             for file in filelst:
                 readed_img=cv2.imread(file, cv2.IMREAD_UNCHANGED)
-                cir_stat=MIN2_ver1(((readed_img >> 8).astype("uint8")),n=10,light_threshold=50,limb_wigth=24,show=True)
+                cir_stat=MIN2_ver1(((readed_img >> 8).astype("uint8")),n=10,light_threshold=50,limb_wigth=24,show=debug and show)
                 std=seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,debug=debug)
                 rere.append(std)
                 pbar.update(1)
@@ -190,7 +190,7 @@ def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
 
 if __name__ == "__main__":
     from tkinter.filedialog import askdirectory,askopenfilename
-    show_test_frame=True
+    show_test_frame=False#Trueにすると1フレームの解析結果を表示します。Falseにするとフォルダ選択になります。
     if show_test_frame:
         picname=askopenfilename(title="ファイルを選択してください",filetypes=[("Image files", "*.jpg;*.jpeg;*.png;*.tiff")])
         img=cv2.imread(picname,cv2.IMREAD_UNCHANGED)
@@ -199,4 +199,4 @@ if __name__ == "__main__":
         seeing_show(img,x,y,cir_stat)
     else:
         peadirpath=askdirectory(title="フォルダを選択してください。(選択dirのサブディレクトリ内の画像が処理されます。)")   
-        result,Df = main(peadirpath,debug=True)
+        result = main(peadirpath,debug=True,show=False)
