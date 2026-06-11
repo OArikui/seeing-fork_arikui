@@ -1,6 +1,11 @@
 import cv2
 import numpy as np
 from decimal import Decimal, ROUND_HALF_UP
+import sys
+from pathlib import Path
+parent_dir = str(Path(__file__).resolve().parent.parent)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -21,26 +26,38 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
                             error:str="None",
                             title:str="None"):
         """主にdebug用です。sampleが画像上のどこなのかを見せてくれます。"""
+        #grad,diffの位置を確認する際に描画の問題なのか実際の場所が違うのかを確認するためにindxを受け取る
         print("sample lib",sample_lib)
         print("gradindx(fis)",gradindx)
         print("diffindx(sed)",diffindx)
-        sample_lib=[sample_lib[0][0],sample_lib[1][0]],[sample_lib[0][1],sample_lib[1][1]]
         (cx,cy),r=cir_stat
         fig, ax = plt.subplots()
         ax.imshow(img, cmap='magma')
-        ax.scatter( min2_edge[0], min2_edge[1], color='cyan', label='MIN edge', s=10)
-        ax.plot( sample_lib[0],sample_lib[1], color='green', label='sample', alpha=0.5)
+        sample_lib=[sample_lib[0][0],sample_lib[1][0]],[sample_lib[0][1],sample_lib[1][1]]
+        ax.plot( sample_lib[0],sample_lib[1], color='#09fb7e', label='sample', alpha=0.8, linewidth=2)
+        ax.scatter( min2_edge[0], min2_edge[1], color='cyan', label='MIN edge', s=15)
         ax.add_patch(patches.Circle((cx, cy), r, fill=False, edgecolor='yellow', linewidth=2))
         if gradindx is not None:
-            gradxy=sample_lib[0][0]+gradindx if sample_lib[0][0]!=sample_lib[1][0] else sample_lib[0][1]+gradindx
-            ax.scatter( gradxy[0], gradxy[1], color='red', label='Gradient max-first', s=10)
+            if sample_lib[1][0]==sample_lib[1][1]:#水平
+                print("horizontal") if debug else None
+                gradxy=sample_lib[0][0]+gradindx+0.5,sample_lib[1][1]
+            else:#垂直
+                print("vertical") if debug else None
+                gradxy=sample_lib[0][0],sample_lib[1][0]+gradindx+0.5
+            ax.scatter( gradxy[0], gradxy[1], color='red', label='Gradient max-first', s=25)
         if diffindx is not None:
-            diffxy=sample_lib[0][0]+diffindx if sample_lib[0][0]!=sample_lib[1][0] else sample_lib[0][1]+diffindx
-            ax.scatter( diffxy[0], diffxy[1], color='blue', label='Difference max-second', s=10)
+            if sample_lib[1][1]==sample_lib[1][0]:#水平
+                print("horizontal") if debug else None
+                diffxy=sample_lib[0][0]+diffindx+0.5,sample_lib[1][1]
+            else:#垂直
+                print("vertical") if debug else None
+                diffxy=sample_lib[0][0],sample_lib[1][0]+diffindx+0.5
+            ax.scatter( diffxy[0], diffxy[1], color='blue', label='Difference max-second', s=25)
         fig.text(0.99, 0.01, f'error reason: {error}', ha='right', va='bottom', fontsize=15, color='gray')
         fig.suptitle(title)
         ax.legend()
         plt.show(block=True)
+        return None
     realrlst=[]
     min2rlst=[]
     x,y=[],[] if show else (None,None)
@@ -95,7 +112,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             realindx=np.argmax(np.diff(samples[fmaxindex:]))+0.5#diffで要素が減る分
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx+i,cy+min2r),[(cx+i,cy+min2r-limb_wigth),(cx+i,cy+min2r+limb_wigth)],cir_stat,None,None,str(e),"B_error") if debug else None
+            where_diff_grad_smale(readed_img,(cx+i,cy+min2r),[(cx+i,cy+min2r-limb_wigth),(cx+i,cy+min2r+limb_wigth)],cir_stat,fmaxindex,None,str(e),"B_error") if debug else None
             print(f"B_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         if show:
             x+=[cx+i]
@@ -110,7 +127,7 @@ def seeing_show(readed_img,x,y,cir):
     center,r=cir
     figure, ax = plt.subplots()
     ax.imshow(readed_img, cmap='magma')
-    ax.scatter(x, y, color='cyan', label='Detected edge points', s=10)
+    ax.scatter(x, y, color='cyan', label='Detected edge points', s=15)
     circle = patches.Circle(center, r, fill=False, edgecolor='yellow', linewidth=2)
     ax.add_patch(circle)
     plt.show()
