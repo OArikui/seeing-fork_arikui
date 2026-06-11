@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from decimal import Decimal, ROUND_HALF_UP
-from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1v
+from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,debug=False):
@@ -21,11 +21,15 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
                             error:str="None",
                             title:str="None"):
         """主にdebug用です。sampleが画像上のどこなのかを見せてくれます。"""
+        print("sample lib",sample_lib)
+        print("gradindx(fis)",gradindx)
+        print("diffindx(sed)",diffindx)
+        sample_lib=[sample_lib[0][0],sample_lib[1][0]],[sample_lib[0][1],sample_lib[1][1]]
         (cx,cy),r=cir_stat
         fig, ax = plt.subplots()
         ax.imshow(img, cmap='magma')
         ax.scatter( min2_edge[0], min2_edge[1], color='cyan', label='MIN edge', s=10)
-        ax.plot( sample_lib, color='green', label='sample', alpha=0.5)
+        ax.plot( sample_lib[0],sample_lib[1], color='green', label='sample', alpha=0.5)
         ax.add_patch(patches.Circle((cx, cy), r, fill=False, edgecolor='yellow', linewidth=2))
         if gradindx is not None:
             gradxy=sample_lib[0][0]+gradindx if sample_lib[0][0]!=sample_lib[1][0] else sample_lib[0][1]+gradindx
@@ -55,7 +59,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx-min2r,cy+i),[(cx-min2r-limb_wigth,cy+i),(cx-min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"L_error") if debug else None
+            where_diff_grad_smale(readed_img,(cx-min2r,cy+i),[(cx-min2r-limb_wigth,cy+i),(cx-min2r+limb_wigth,cy+i)],cir_stat,fmaxindex,None,str(e),"L_error") if debug else None
             print(f"L_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None 
         if show:
             x+=[cx-min2r-limb_wigth+realindx]
@@ -66,7 +70,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
             realindx=np.argmax(np.diff((samples[fmaxindex:])))+0.5#diffで要素が減る分
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"R_error") if debug else None
+            where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,fmaxindex,None,str(e),"R_error") if debug else None
             print(f"R_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
@@ -78,7 +82,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
             realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx,cy-min2r),[(cx-limb_wigth,cy-min2r),(cx+limb_wigth,cy-min2r)],cir_stat,None,None,str(e),"T_error") if debug else None
+            where_diff_grad_smale(readed_img,(cx+i,cy-min2r),[(cx+i,cy-min2r-limb_wigth),(cx+i,cy-min2r+limb_wigth)],cir_stat,fmaxindex,None,str(e),"T_error") if debug else None
             print(f"T_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
@@ -91,7 +95,7 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             realindx=np.argmax(np.diff(samples[fmaxindex:]))+0.5#diffで要素が減る分
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"B_error") if debug else None
+            where_diff_grad_smale(readed_img,(cx+i,cy+min2r),[(cx+i,cy+min2r-limb_wigth),(cx+i,cy+min2r+limb_wigth)],cir_stat,None,None,str(e),"B_error") if debug else None
             print(f"B_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         if show:
             x+=[cx+i]
@@ -144,7 +148,7 @@ def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
 
 if __name__ == "__main__":
     from tkinter.filedialog import askdirectory,askopenfilename
-    show_test_frame=False
+    show_test_frame=True
     if show_test_frame:
         picname=askopenfilename(title="ファイルを選択してください",filetypes=[("Image files", "*.jpg;*.jpeg;*.png;*.tiff")])
         img=cv2.imread(picname,cv2.IMREAD_UNCHANGED)
