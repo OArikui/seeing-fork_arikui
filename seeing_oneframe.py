@@ -89,28 +89,32 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
         min2r=float(min2r)#decimalはfloatと計算できないのでfloatに変換
         #L
         samples=readed_img[int(cy+i),int(cx-min2r-limb_wigth):int(cx-min2r+limb_wigth)]
-        realindx=np.argmax(np.diff(np.gradient(samples)))+0.5#diffで要素が減る分
+        fmaxindx=np.argmax(np.abs(np.gradient(samples)))#明るさが減少方向の場合は絶対値でないとだめ
+        realindx=np.argmax(np.abs(np.diff(np.gradient(samples[:fmaxindx]))))+0.5#diffで要素が減る分
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx-min2r-limb_wigth+realindx]
             y+=[cy+i]
         #R
         samples=readed_img[int(cy+i),int(cx+min2r-limb_wigth):int(cx+min2r+limb_wigth)]
-        realindx=np.argmax(np.diff(np.gradient(samples)))+0.5#diffで要素が減る分
+        fmaxindx=np.argmax(np.abs(np.gradient(samples)))
+        realindx=np.argmax(np.abs(np.diff(np.gradient(samples[fmaxindx:]))))+fmaxindx+0.5#diffで要素が減る分
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx+min2r-limb_wigth+realindx]
             y+=[cy+i]
         #T
         samples=readed_img[int(cy-min2r-limb_wigth):int(cy-min2r+limb_wigth),int(cx+i)]
-        realindx=np.argmax(np.diff(np.gradient(samples)))+0.5#diffで要素が減る分
+        fmaxindx=np.argmax(np.abs(np.gradient(samples)))
+        realindx=np.argmax(np.abs(np.diff(np.gradient(samples[:fmaxindx]))))+0.5#diffで要素が減る分
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx+i]
             y+=[cy-min2r-limb_wigth+realindx]
         #B
         samples=readed_img[int(cy+min2r-limb_wigth):int(cy+min2r+limb_wigth),int(cx+i)]
-        realindx=np.argmax(np.diff(np.gradient(samples)))+0.5#diffで要素が減る分
+        fmaxindx=np.argmax(np.abs(np.gradient(samples)))
+        realindx=np.argmax(np.abs(np.diff(np.gradient(samples[fmaxindx:]))))+fmaxindx+0.5#diffで要素が減る分
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
             x+=[cx+i]

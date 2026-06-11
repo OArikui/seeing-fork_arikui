@@ -93,8 +93,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
         #L
         try:
             samples=readed_img[int(cy+i),int(cx-min2r-limb_wigth):int(cx-min2r+limb_wigth)]
-            fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
-            realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
+            fmaxindex=np.argmax(np.abs(np.gradient(samples)))#1回微分の最大
+            realindx=np.argmax(np.abs(np.diff(np.gradient(samples[:fmaxindex]))))+0.5#diffで要素が減る分
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
             where_diff_grad_smale(readed_img,(cx-min2r,cy+i),[(cx-min2r-limb_wigth,cy+i),(cx-min2r+limb_wigth,cy+i)],cir_stat,fmaxindex,None,str(e),"L_error") if debug else None
@@ -106,8 +106,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
         #R
         try:
             samples=readed_img[int(cy+i),int(cx+min2r-limb_wigth):int(cx+min2r+limb_wigth)]
-            fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
-            realindx=np.argmax(np.diff((samples[fmaxindex:])))+0.5#diffで要素が減る分
+            fmaxindex=np.argmax(np.abs(np.gradient(samples)))#1回微分の最大
+            realindx=np.argmax(np.abs(np.diff(np.gradient(samples[fmaxindex:]))))+fmaxindex+0.5#diffで要素が減る分
         except ValueError as e:
             where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,fmaxindex,None,str(e),"R_error") if debug else None
             show_samples(limb_wigth,samples,"R",str(e),i) if debug else None
@@ -119,8 +119,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
         #T
         try:
             samples=readed_img[int(cy-min2r-limb_wigth):int(cy-min2r+limb_wigth),int(cx+i)]
-            fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
-            realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
+            fmaxindex=np.argmax(np.abs(np.gradient(samples)))#1回微分の最大
+            realindx=np.argmax(np.abs(np.diff(np.gradient(samples[:fmaxindex]))))+0.5#diffで要素が減る分
         except ValueError as e:
             show_samples(limb_wigth,samples,"T",str(e),i) if debug else None
             where_diff_grad_smale(readed_img,(cx+i,cy-min2r),[(cx+i,cy-min2r-limb_wigth),(cx+i,cy-min2r+limb_wigth)],cir_stat,fmaxindex,None,str(e),"T_error") if debug else None
@@ -132,8 +132,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
         #B
         try:
             samples=readed_img[int(cy+min2r-limb_wigth):int(cy+min2r+limb_wigth),int(cx+i)]
-            fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
-            realindx=np.argmax(np.diff(samples[fmaxindex:]))+0.5#diffで要素が減る分
+            fmaxindex=np.argmax(np.abs(np.gradient(samples)))#1回微分の最大
+            realindx=np.argmax(np.abs(np.diff(np.gradient(samples[fmaxindex:]))))+fmaxindex+0.5#diffで要素が減る分
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
             show_samples(limb_wigth,samples,"B",str(e),i) if debug else None    

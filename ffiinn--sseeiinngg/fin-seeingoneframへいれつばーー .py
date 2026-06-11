@@ -41,12 +41,13 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
             raise ("sample size is zero")
         else:
             grad = np.gradient(samples.astype(np.float64))#一回微分
-            diff = np.diff(grad[:np.argmax(grad)])#２回微分
+            grad_max_idx = np.argmax(np.abs(grad))
+            diff = np.diff(grad[:grad_max_idx])#２回微分
             # argmax が空配列になる可能性を考慮
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
-                realindx = float(np.argmax(diff)) + 0.5#diffで減る分の0.5
+                realindx = float(np.argmax(np.abs(diff))) + 0.5#diffで減る分の0.5
         realrlst.append(min2r_int + realindx - limb_wigth)
 
         # R
@@ -57,11 +58,12 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
             raise ("sample size is zero")
         else:
             grad = np.gradient(samples.astype(np.float64))
-            diff = np.diff(grad[np.argmax(grad):])
+            grad_max_idx = np.argmax(np.abs(grad))
+            diff = np.diff(grad[:grad_max_idx])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
-                realindx = float(np.argmax(diff)) + 0.5#diffで減る分の0.5
+                realindx = float(np.argmax(np.abs(diff))) +grad_max_idx+ 0.5#diffで減る分の0.5
         realrlst.append(min2r_int + realindx - limb_wigth)
 
         # T
@@ -73,11 +75,12 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
             raise ("sample size is zero")
         else:
             grad = np.gradient(samples.astype(np.float64))
-            diff = np.diff(grad[:np.argmax(grad)])
+            grad_max_idx = np.argmax(np.abs(grad))
+            diff = np.diff(grad[:grad_max_idx])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
-                realindx = float(np.argmax(diff)) + 0.5#diffで減る分の0.5
+                realindx = float(np.argmax(np.abs(diff))) + 0.5#diffで減る分の0.5
         realrlst.append(min2r_int + realindx - limb_wigth)
 
         # B
@@ -88,11 +91,12 @@ def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
             raise ("sample size is zero")
         else:
             grad = np.gradient(samples.astype(np.float64))
-            diff = np.diff(grad[np.argmax(grad):])
+            grad_max_idx = np.argmax(np.abs(grad))
+            diff = np.diff(grad[grad_max_idx:])
             if diff.size == 0:
                 raise ("sample size is zero")
             else:
-                realindx = float(np.argmax(diff)) + 0.5#diffで減る分の0.5
+                realindx = float(np.argmax(np.abs(diff))) + grad_max_idx + 0.5#diffで減る分の0.5
         realrlst.append(min2r_int + realindx - limb_wigth)
 
     realrlst = np.array(realrlst, dtype=np.float64)
