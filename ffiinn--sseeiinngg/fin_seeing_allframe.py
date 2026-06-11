@@ -1,7 +1,14 @@
 import cv2
 import numpy as np
 from decimal import Decimal, ROUND_HALF_UP
+import sys
+from pathlib import Path
+parent_dir = str(Path(__file__).resolve().parent.parent)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,debug=False):
     """
     reimg:cv2で読み込んだ画像を渡してください
@@ -14,29 +21,64 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
                             min2_edge:tuple,#(x,y)
                             sample_lib:list, #(startpoint(x,y),endpoint(x,y))
                             cir_stat:tuple,#(cx,cy),r
-                            gradindx:float|int|None,
-                            diffindx:float|int|None,
+                            gradindx:float|int=None,
+                            diffindx:float|int=None,
                             error:str="None",
                             title:str="None"):
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as patches
         """主にdebug用です。sampleが画像上のどこなのかを見せてくれます。"""
+        #grad,diffの位置を確認する際に描画の問題なのか実際の場所が違うのかを確認するためにindxを受け取る
+        print("sample lib",sample_lib)
+        print("gradindx(fis)",gradindx)
+        print("diffindx(sed)",diffindx)
         (cx,cy),r=cir_stat
         fig, ax = plt.subplots()
         ax.imshow(img, cmap='magma')
-        ax.scatter( min2_edge[0], min2_edge[1], color='cyan', label='MIN edge', s=10)
-        ax.plot( sample_lib, color='green', label='sample', alpha=0.5)
+        sample_lib=[sample_lib[0][0],sample_lib[1][0]],[sample_lib[0][1],sample_lib[1][1]]
+        ax.plot( sample_lib[0],sample_lib[1], color='#09fb7e', label='sample', alpha=0.8, linewidth=2)
+        ax.scatter( min2_edge[0], min2_edge[1], color='cyan', label='MIN edge', s=15)
         ax.add_patch(patches.Circle((cx, cy), r, fill=False, edgecolor='yellow', linewidth=2))
         if gradindx is not None:
-            gradxy=sample_lib[0][0]+gradindx if sample_lib[0][0]!=sample_lib[1][0] else sample_lib[0][1]+gradindx
-            ax.scatter( gradxy[0], gradxy[1], color='red', label='Gradient max-first', s=10)
+            if sample_lib[1][0]==sample_lib[1][1]:#水平
+                print("horizontal") if debug else None
+                gradxy=sample_lib[0][0]+gradindx+0.5,sample_lib[1][1]
+            else:#垂直
+                print("vertical") if debug else None
+                gradxy=sample_lib[0][0],sample_lib[1][0]+gradindx+0.5
+            ax.scatter( gradxy[0], gradxy[1], color='red', label='Gradient max-first', s=25)
         if diffindx is not None:
-            diffxy=sample_lib[0][0]+diffindx if sample_lib[0][0]!=sample_lib[1][0] else sample_lib[0][1]+diffindx
-            ax.scatter( diffxy[0], diffxy[1], color='blue', label='Difference max-second', s=10)
+            if sample_lib[1][1]==sample_lib[1][0]:#水平
+                print("horizontal") if debug else None
+                diffxy=sample_lib[0][0]+diffindx+0.5,sample_lib[1][1]
+            else:#垂直
+                print("vertical") if debug else None
+                diffxy=sample_lib[0][0],sample_lib[1][0]+diffindx+0.5
+            ax.scatter( diffxy[0], diffxy[1], color='blue', label='Difference max-second', s=25)
         fig.text(0.99, 0.01, f'error reason: {error}', ha='right', va='bottom', fontsize=15, color='gray')
         fig.suptitle(title)
         ax.legend()
         plt.show(block=True)
+        return None
+    def show_samples(limb_wigth,sample,place,e,gaps):
+                    #縁サンプルの折れ線
+                    fig, ax = plt.subplots()
+                    # タイトル
+                    fig.suptitle(f"{place}_{gaps}")
+                    fig.text(0.5, 0.92, f"error reason: {e}", ha='center')
+                    # 第2軸（右）
+                    ax.plot(sample, color="green", label="sample_ax1",linewidth=0.7,alpha=0.7)
+                    # 第1軸（左）
+                    ax2 = ax.twinx()
+                    ax2.plot(np.gradient(sample), label="grad(sample)_ax2",linewidth=0.7)
+                    ax2.plot(np.diff(np.gradient(sample)), label="diff(grad(sample))_ax2",linewidth=0.7)
+                    ax2.scatter(np.argmax(np.gradient(sample)), np.gradient(sample)[np.argmax(np.gradient(sample))], color="red", label="Gradient max(ax2)")
+                    ax2.scatter(np.argmax(np.diff(np.gradient(sample))), np.diff(np.gradient(sample))[np.argmax(np.diff(np.gradient(sample)))], color="blue", label="Difference max(ax2)")
+                    #min2の縁をプロット
+                    ax2.axvline(x=limb_wigth, color="gray", label="min2 edge", linestyle="--")
+                    # 凡例をまとめる
+                    lines1, labels1 = ax.get_legend_handles_labels()
+                    lines2, labels2 = ax2.get_legend_handles_labels()
+                    ax.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+                    plt.show(block=True)
     realrlst=[]
     min2rlst=[]
     x,y=[],[] if show else (None,None)
@@ -55,7 +97,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx-min2r,cy+i),[(cx-min2r-limb_wigth,cy+i),(cx-min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"L_error") if debug else None
+            where_diff_grad_smale(readed_img,(cx-min2r,cy+i),[(cx-min2r-limb_wigth,cy+i),(cx-min2r+limb_wigth,cy+i)],cir_stat,fmaxindex,None,str(e),"L_error") if debug else None
+            show_samples(limb_wigth,samples,"L",str(e),i) if debug else None
             print(f"L_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None 
         if show:
             x+=[cx-min2r-limb_wigth+realindx]
@@ -66,7 +109,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
             realindx=np.argmax(np.diff((samples[fmaxindex:])))+0.5#diffで要素が減る分
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"R_error") if debug else None
+            where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,fmaxindex,None,str(e),"R_error") if debug else None
+            show_samples(limb_wigth,samples,"R",str(e),i) if debug else None
             print(f"R_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
@@ -78,7 +122,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             fmaxindex=np.argmax(np.gradient(samples))#1回微分の最大
             realindx=np.argmax(np.diff((samples[:fmaxindex])))+0.5#diffで要素が減る分
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx,cy-min2r),[(cx-limb_wigth,cy-min2r),(cx+limb_wigth,cy-min2r)],cir_stat,None,None,str(e),"T_error") if debug else None
+            show_samples(limb_wigth,samples,"T",str(e),i) if debug else None
+            where_diff_grad_smale(readed_img,(cx+i,cy-min2r),[(cx+i,cy-min2r-limb_wigth),(cx+i,cy-min2r+limb_wigth)],cir_stat,fmaxindex,None,str(e),"T_error") if debug else None
             print(f"T_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         realrlst+=[min2r+realindx-limb_wigth]
         if show:
@@ -91,7 +136,8 @@ def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,
             realindx=np.argmax(np.diff(samples[fmaxindex:]))+0.5#diffで要素が減る分
             realrlst+=[min2r+realindx-limb_wigth]
         except ValueError as e:
-            where_diff_grad_smale(readed_img,(cx+min2r,cy+i),[(cx+min2r-limb_wigth,cy+i),(cx+min2r+limb_wigth,cy+i)],cir_stat,None,None,str(e),"B_error") if debug else None
+            show_samples(limb_wigth,samples,"B",str(e),i) if debug else None    
+            where_diff_grad_smale(readed_img,(cx+i,cy+min2r),[(cx+i,cy+min2r-limb_wigth),(cx+i,cy+min2r+limb_wigth)],cir_stat,fmaxindex,None,str(e),"B_error") if debug else None
             print(f"B_error:{e},i:{i},fmaxindex:{fmaxindex},min2r:{min2r}") if debug else None
         if show:
             x+=[cx+i]
@@ -106,7 +152,7 @@ def seeing_show(readed_img,x,y,cir):
     center,r=cir
     figure, ax = plt.subplots()
     ax.imshow(readed_img, cmap='magma')
-    ax.scatter(x, y, color='cyan', label='Detected edge points', s=10)
+    ax.scatter(x, y, color='cyan', label='Detected edge points', s=15)
     circle = patches.Circle(center, r, fill=False, edgecolor='yellow', linewidth=2)
     ax.add_patch(circle)
     plt.show()
@@ -144,7 +190,7 @@ def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False):
 
 if __name__ == "__main__":
     from tkinter.filedialog import askdirectory,askopenfilename
-    show_test_frame=False
+    show_test_frame=True
     if show_test_frame:
         picname=askopenfilename(title="ファイルを選択してください",filetypes=[("Image files", "*.jpg;*.jpeg;*.png;*.tiff")])
         img=cv2.imread(picname,cv2.IMREAD_UNCHANGED)
