@@ -4,54 +4,35 @@ import sqlite3
 import time
 import json
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable, List, Sequence
-db_title="seeing_bench"
-DB_PATH = __file__.replace(__file__.split("\\")[-1],"data_souces\\"+db_title)+".db"          # 保存先DBファイル（必要に応じて変更）
+
+db_title = "seeing_bench"
+DB_PATH = __file__.replace(__file__.split("\\")[-1], "data_souces\\" + db_title) + ".db"  # 保存先DBファイル（必要に応じて変更）
 REPEATS = 5                     # 各組み合わせの繰り返し回数
 WARMUP = 1                      # 各組み合わせのウォームアップ回数
 MIN_TIME = 0.0                  # 0.0なら無効。>0なら合計実行時間がこの秒数以上になるまで繰り返す
-
-"""
-使い方
-・比較したい関数が別モジュールにある場合は上部で from myfuncs import f1, f2 のように import して FUNCTIONS に追加する。
-・ARG_PATTERNS に試したい引数パターンをリストで書く（位置引数のみ）。
-・必要なら DB_PATH / REPEATS / WARMUP / MIN_TIME を編集する。
-
-dbの形式
-
-カラム名	       型 	     説明    	                        例
-id	              INTEGER	自動採番の主キー	                 1
-timestamp	      TEXT	    実行時刻（UTC ISO）	                2026-06-06T09:12:34.123456Z
-module	          TEXT	    関数が属するモジュール名（空文字可）  myfuncs
-function	      TEXT	    関数名	                            f1
-args_json	      TEXT	    実行時の引数を JSON 文字列で保存     "[1, 2]"
-repeat_index      INTEGER	繰り返しインデックス（0 から）	       0
-duration_seconds  REAL	    実行時間（秒）。失敗時は NULL	      0.000345
-success	          INTEGER	成功なら 1、失敗なら 0	                1
-error_text	      TEXT	    例外のトレース（失敗時のみ）    	"Traceback: ..."
-"""
 
 # --- ここにベンチ対象の関数を import してリストに入れる --
 from see_testers.fin_seeing_allframe import main as fin_seeing_allframe
 from see_testers.fin_seeingonefram_propool import main as fin_seeingonefram_propool
 from see_testers.fin_seeingonefram_propool_chunk import main as fin_seeingonefram_propool_chunk
 from see_testers.fin_seeingonefram_propool_chunk_fast import main as fin_seeingonefram_propool_chunk_fast
+
 # ベンチする関数のリスト（callable を直接入れる）
 FUNCTIONS: List[Callable[..., Any]] = [
-    fin_seeing_allframe
-    ,fin_seeingonefram_propool
-    ,fin_seeingonefram_propool_chunk
-    ,fin_seeingonefram_propool_chunk_fast
+    fin_seeing_allframe,
+    fin_seeingonefram_propool,
+    fin_seeingonefram_propool_chunk,
+    fin_seeingonefram_propool_chunk_fast
 ]
 
 # --- ここに試す引数パターンを定義する ---
-# 各要素は位置引数のリスト。キーワード引数が必要なら下の拡張例を参照
-test_save=r"C:\projects\seeing-fork_arikui\see_testers\test_result.db"
+test_save = r"C:\projects\seeing-fork_arikui\see_testers\test_result.db"
 ARG_PATTERNS: List[Sequence[Any]] = [
-    [r"J:\2025-08-30Z\2025-08-30-LT",test_save,True],
-    [r"J:\2025-07-20Z\2025-07-20-PL",test_save,True],
-    [r"J:\2026-02-01Z\2026-02-01LT2",test_save,True]
+    [r"J:\2025-08-30Z\2025-08-30-LT", test_save, True],
+    [r"J:\2025-07-20Z\2025-07-20-PL", test_save, True],
+    [r"J:\2026-02-01Z\2026-02-01LT2", test_save, True]
 ]
 
 # --- DB スキーマ ---
@@ -101,24 +82,47 @@ def call_and_time(func: Callable[..., Any], args: Sequence[Any]) -> tuple[float,
     end = time.perf_counter()
     return end - start, result
 
-def success_check(return_value):#成功か否かを判定できます
+def success_check(return_value):
     if return_value:
         return True
     else:
         return False
+
 def main():
     ensure_db(DB_PATH)
+    
+    total_steps = len(FUNCTIONS) * len(ARG_PATTERNS) * REPEATS
+    current_step = 0
+    start_time = time.perf_counter()
+    
+    print(f"ベンチマーク開始: 全 {total_steps} ステップ (Warmup除く)")
+    
     for func in FUNCTIONS:
         func_name = getattr(func, "__name__", repr(func))
         module_name = getattr(func, "__module__", None)
+        
+        short_module = module_name.split('.')[-1] if module_name else ""
+        display_name = f"{short_module}.{func_name}" if short_module else func_name
+        
+        # モジュール実行の区切りを表示
+        print(f"\n========== 【モジュール】 {display_name} ==========")
+        
         for pattern in ARG_PATTERNS:
+            # 現在テストしている変数を表示
+            print(f"  [テスト変数] args: {pattern}")
+            
             # Warmup
-            for _ in range(WARMUP):
-                try:
-                    func(*pattern)
-                except Exception:
-                    pass
+            if WARMUP > 0:
+                for w in range(WARMUP):
+                    # ウォームアップの状況を同一行で上書き表示（見栄え用）
+                    print(f"  -> ウォームアップ ({w + 1}/{WARMUP}) 実行中...", end="\r")
+                    try:
+                        func(*pattern)
+                    except Exception:
+                        pass
+                print(f"  -> ウォームアップ 完了{' ' * 15}") # 上書き消去用スペース付き
 
+            print("  -> 本番計測開始...")
             for repeat_index in range(REPEATS):
                 total_time = 0.0
                 runs = 0
@@ -131,6 +135,7 @@ def main():
                         duration = None
                         success = False
                         error_text = traceback.format_exc()
+                    
                     record_run(DB_PATH, module_name, func_name, pattern, repeat_index, duration, success, error_text)
                     runs += 1
                     if duration is not None:
@@ -139,7 +144,26 @@ def main():
                         break
                     if total_time >= MIN_TIME:
                         break
-                print(f"[{func_name}] args={pattern} repeat={repeat_index} runs={runs} total_time={total_time:.6f}s")
+                
+                # 進捗計算
+                current_step += 1
+                elapsed = time.perf_counter() - start_time
+                
+                avg_time_per_step = elapsed / current_step
+                remaining_steps = total_steps - current_step
+                eta_seconds = avg_time_per_step * remaining_steps
+                
+                eta_td = timedelta(seconds=int(eta_seconds))
+                estimated_end = datetime.now() + eta_td
+                
+                progress_pct = (current_step / total_steps) * 100
+                
+                # モジュール名や変数は上で表示しているので、ここでは計測結果と進捗のみをスッキリと表示
+                print(
+                    f"    [{current_step}/{total_steps}] ({progress_pct:5.1f}%) "
+                    f"repeat={repeat_index + 1}/{REPEATS} total_time={total_time:.6f}s "
+                    f"| 残り約: {eta_td} (終了予想: {estimated_end.strftime('%H:%M:%S')})"
+                )
 
 if __name__ == "__main__":
     main()

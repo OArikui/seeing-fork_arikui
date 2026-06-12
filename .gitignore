@@ -1,4 +1,4 @@
 KANSUU.py
 .vscode/settings.json
 ffiinn--sseeiinngg/MIN2_ignore_sunspots.py
-__pycache__\
+*.pyc
