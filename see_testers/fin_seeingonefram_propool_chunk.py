@@ -274,7 +274,7 @@ def main(peadirpath:str, savepath:str=None,dyjest=False,max_workers:int=None, ch
             print(Df)
             print(f"Total time: {time() - st:.2f} sec")
     if savepath != None:
-        save_db(all_results,peadirpath,__file__.split("\\")[-1]+"_prototype",
+        save_db(all_results,str(peadirpath),__file__.split("\\")[-1]+"_prototype",
                 {"limb_wigth":limb_wigth,"secdiff":"diff(grad())","max_worker":max_workers,"max_chunk(b)":chunk_bytes}
                 ,savepath,dyjest=dyjest)
     return all_results

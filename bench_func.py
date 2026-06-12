@@ -9,8 +9,8 @@ from typing import Any, Callable, List, Sequence
 
 db_title = "seeing_bench"
 DB_PATH = __file__.replace(__file__.split("\\")[-1], "data_souces\\" + db_title) + ".db"  # 保存先DBファイル（必要に応じて変更）
-REPEATS = 5                     # 各組み合わせの繰り返し回数
-WARMUP = 1                      # 各組み合わせのウォームアップ回数
+REPEATS = 2                     # 各組み合わせの繰り返し回数
+WARMUP = 0                      # 各組み合わせのウォームアップ回数
 MIN_TIME = 0.0                  # 0.0なら無効。>0なら合計実行時間がこの秒数以上になるまで繰り返す
 
 # --- ここにベンチ対象の関数を import してリストに入れる --
@@ -31,8 +31,6 @@ FUNCTIONS: List[Callable[..., Any]] = [
 test_save = r"C:\projects\seeing-fork_arikui\see_testers\test_result.db"
 ARG_PATTERNS: List[Sequence[Any]] = [
     [r"J:\2025-08-30Z\2025-08-30-LT", test_save, True],
-    [r"J:\2025-07-20Z\2025-07-20-PL", test_save, True],
-    [r"J:\2026-02-01Z\2026-02-01LT2", test_save, True]
 ]
 
 # --- DB スキーマ ---
