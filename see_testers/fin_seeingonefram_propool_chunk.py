@@ -2,7 +2,12 @@ from pathlib import Path
 import cv2
 import numpy as np
 from tqdm import tqdm
+import sys
+parent_dir = str(Path(__file__).resolve().parent.parent)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
+from db_for_seeing import save_db
 import logging
 from decimal import Decimal,ROUND_HALF_UP
 
@@ -224,7 +229,7 @@ def chunk_paths_by_memory(paths, chunk_bytes=5 * 1024**3):
     return chunks
 
 
-def main(peadirpath:str, max_workers=int|None, chunk_bytes=5 * 1024**3,limb_wigth=24, allp_num=1360, debug=False):
+def main(peadirpath:str, savepath:str=None,dyjest=False,max_workers=int|None, chunk_bytes=5 * 1024**3,limb_wigth=24, allp_num=1360, debug=False):
     from concurrent.futures import ProcessPoolExecutor, as_completed
     from time import time
     import pandas as pd
@@ -268,6 +273,8 @@ def main(peadirpath:str, max_workers=int|None, chunk_bytes=5 * 1024**3,limb_wigt
             Df=pd.DataFrame({cdir:pd.Series(all_results[cdir]).agg(contents) for cdir in all_results.keys()})
             print(Df)
             print(f"Total time: {time() - st:.2f} sec")
+    if savepath != None:
+        save_db(all_results,peadirpath,__file__.split("\\")[-1]+"_prototype",{"limb_wigth":limb_wigth,"secdiff":"diff(grad())"},savepath,dyjest=dyjest)
     return all_results
 
 

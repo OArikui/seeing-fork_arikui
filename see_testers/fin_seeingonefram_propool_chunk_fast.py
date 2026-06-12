@@ -10,8 +10,13 @@ import sqlite3
 import datetime
 import logging
 import random
+import sys
 from PIL import Image  # pip install pillow
+parent_dir = str(Path(__file__).resolve().parent.parent)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
+from db_for_seeing import save_db
 
 logging.basicConfig(level=logging.INFO)
 
@@ -339,7 +344,7 @@ def process_single_image(img, path, limb_wigth=24, allp_num=1360):
         logging.exception(f"Unexpected error for {path}: {e}")
         return path, None
 
-def main(peadirpath:str, max_workers=int|None,max_chunk_bytes=5 * 1024**3, sample_per_bin=20,limb_wigth=24, allp_num=1360,debug=False):
+def main(peadirpath:str,savepath:str=None,dyjest=False, max_workers=int|None,max_chunk_bytes=5 * 1024**3, sample_per_bin=20,limb_wigth=24, allp_num=1360,debug=False):
     from time import time
     import datetime
     if debug:
@@ -393,6 +398,8 @@ def main(peadirpath:str, max_workers=int|None,max_chunk_bytes=5 * 1024**3, sampl
             Df=pd.DataFrame({cdir:pd.Series(all_results[cdir]).agg(contents) for cdir in all_results.keys()})
             print(Df)
         print(f"Total time: {time() - st:.2f} sec")
+    if savepath != None:
+        save_db(all_results,peadirpath,__file__.split("\\")[-1]+"_prototype",{"limb_wigth":limb_wigth,"secdiff":"diff(grad())"},savepath,dyjest=dyjest)
     return all_results
 
 if __name__ == "__main__":

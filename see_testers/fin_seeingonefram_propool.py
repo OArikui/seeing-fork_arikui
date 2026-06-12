@@ -3,7 +3,12 @@ from pathlib import Path
 import cv2
 import numpy as np
 from decimal import Decimal, ROUND_HALF_UP
+import sys
+parent_dir = str(Path(__file__).resolve().parent.parent)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
+from db_for_seeing import save_db
 
 def seeing_one_frame_fast(readed_img, cir_stat, limb_wigth=24, allp_num=1360):
     """
@@ -148,7 +153,7 @@ def gather_image_paths(root_dir, exts=(".jpg", ".jpeg", ".png", ".tiff")):
     return groups
 
 
-def main(peadirpath:str, max_workers:int|None, limb_wigth=24, allp_num=1360,debug=False):
+def main(peadirpath:str,savepath:str=None,dyjest=False,max_workers:int|None, limb_wigth=24, allp_num=1360,debug=False):
     from time import time
     import pandas as pd
     from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -185,6 +190,8 @@ def main(peadirpath:str, max_workers:int|None, limb_wigth=24, allp_num=1360,debu
         Df=pd.DataFrame({cdir:pd.Series(results[cdir]).agg(contents) for cdir in results.keys()})
         print(Df)
         print(f"seeing_one_frameの解析時間:{time()-st}秒")
+    if savepath != None:
+        save_db(results,peadirpath,__file__.split("\\")[-1]+"_prototype",{"limb_wigth":limb_wigth,"secdiff":"diff(grad())"},savepath,dyjest=dyjest)
     return results
 
 

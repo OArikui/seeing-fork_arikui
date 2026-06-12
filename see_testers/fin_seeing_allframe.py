@@ -1,12 +1,13 @@
 import cv2
 import numpy as np
 from decimal import Decimal, ROUND_HALF_UP
-import sys
 from pathlib import Path
+import sys
 parent_dir = str(Path(__file__).resolve().parent.parent)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 from MIN2_ignore_sunspots import MIN2_ignore_sunspots as MIN2_ver1
+from db_for_seeing import save_db
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 def seeing_one_frame(readed_img,cir_stat,limb_wigth=24,allp_num=1360,show=False,debug=False):
@@ -157,7 +158,7 @@ def seeing_show(readed_img,x,y,cir):
     ax.add_patch(circle)
     plt.show()
 
-def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False,show=False):
+def main(peadirpath:str,savepath:str=None,dyjest=False,limb_wigth=24, allp_num=1360,debug=False,show=False):
     from time import time
     import pandas as pd
     from pathlib import Path
@@ -186,6 +187,8 @@ def main(peadirpath:str,limb_wigth=24, allp_num=1360,debug=False,show=False):
         Df=pd.DataFrame({cdir:pd.Series(results[cdir]).agg(contents) for cdir in results.keys()})
         print(Df)
         print(f"seeing_one_frameの解析時間:{time()-st}秒")
+    if savepath != None:
+        save_db(results,peadirpath,__file__.split("\\")[-1]+"_prototype",{"limb_wigth":limb_wigth,"secdiff":"diff(grad())"},savepath,dyjest=dyjest)
     return results
 
 if __name__ == "__main__":
