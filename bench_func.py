@@ -6,7 +6,7 @@ import json
 import traceback
 from datetime import datetime
 from typing import Any, Callable, List, Sequence
-db_title=""
+db_title="seeing_bench"
 DB_PATH = __file__.replace(__file__.split("\\")[-1],"data_souces\\"+db_title)+".db"          # 保存先DBファイル（必要に応じて変更）
 REPEATS = 5                     # 各組み合わせの繰り返し回数
 WARMUP = 1                      # 各組み合わせのウォームアップ回数
@@ -32,33 +32,26 @@ success	          INTEGER	成功なら 1、失敗なら 0	                1
 error_text	      TEXT	    例外のトレース（失敗時のみ）    	"Traceback: ..."
 """
 
-# --- ここにベンチ対象の関数を import してリストに入れる ---
-# 例: from myfuncs import f1, f2, f3
-# FUNCTIONS = [f1, f2, f3]
-
-# 代わりにスクリプト内で関数を定義してもOK
-def example_fast(a, b):
-    s = 0
-    for i in range(10000):
-        s += (a + b + i) % 7
-    return s
-
-def example_slow(a, b):
-    time.sleep(0.001)
-    return example_fast(a, b)
-
+# --- ここにベンチ対象の関数を import してリストに入れる --
+from see_testers.fin_seeing_allframe import main as fin_seeing_allframe
+from see_testers.fin_seeingonefram_propool import main as fin_seeingonefram_propool
+from see_testers.fin_seeingonefram_propool_chunk import main as fin_seeingonefram_propool_chunk
+from see_testers.fin_seeingonefram_propool_chunk_fast import main as fin_seeingonefram_propool_chunk_fast
 # ベンチする関数のリスト（callable を直接入れる）
 FUNCTIONS: List[Callable[..., Any]] = [
-    example_fast,
-    example_slow,
+    fin_seeing_allframe
+    ,fin_seeingonefram_propool
+    ,fin_seeingonefram_propool_chunk
+    ,fin_seeingonefram_propool_chunk_fast
 ]
 
 # --- ここに試す引数パターンを定義する ---
 # 各要素は位置引数のリスト。キーワード引数が必要なら下の拡張例を参照
+test_save=r"C:\projects\seeing-fork_arikui\see_testers\test_result.db"
 ARG_PATTERNS: List[Sequence[Any]] = [
-    [1, 2],
-    [10, 20],
-    [100, 200],
+    [r"J:\2025-08-30Z\2025-08-30-LT",test_save,True],
+    [r"J:\2025-07-20Z\2025-07-20-PL",test_save,True],
+    [r"J:\2026-02-01Z\2026-02-01LT2",test_save,True]
 ]
 
 # --- DB スキーマ ---
