@@ -153,7 +153,7 @@ def gather_image_paths(root_dir, exts=(".jpg", ".jpeg", ".png", ".tiff")):
     return groups
 
 
-def main(peadirpath:str,savepath:str=None,dyjest=False,max_workers:int|None, limb_wigth=24, allp_num=1360,debug=False):
+def main(peadirpath:str,savepath:str=None,dyjest=False,max_workers:int=None, limb_wigth=24, allp_num=1360,debug=False):
     from time import time
     import pandas as pd
     from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -191,7 +191,7 @@ def main(peadirpath:str,savepath:str=None,dyjest=False,max_workers:int|None, lim
         print(Df)
         print(f"seeing_one_frameの解析時間:{time()-st}秒")
     if savepath != None:
-        save_db(results,peadirpath,__file__.split("\\")[-1]+"_prototype",{"limb_wigth":limb_wigth,"secdiff":"diff(grad())"},savepath,dyjest=dyjest)
+        save_db(results,peadirpath,__file__.split("\\")[-1]+"_prototype",{"limb_wigth":limb_wigth,"secdiff":"diff(grad())","max_wokers":max_workers},savepath,dyjest=dyjest)
     return results
 
 

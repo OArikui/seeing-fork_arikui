@@ -344,7 +344,7 @@ def process_single_image(img, path, limb_wigth=24, allp_num=1360):
         logging.exception(f"Unexpected error for {path}: {e}")
         return path, None
 
-def main(peadirpath:str,savepath:str=None,dyjest=False, max_workers=int|None,max_chunk_bytes=5 * 1024**3, sample_per_bin=20,limb_wigth=24, allp_num=1360,debug=False):
+def main(peadirpath:str,savepath:str=None,dyjest=False, max_workers:int=None,max_chunk_bytes=5 * 1024**3, sample_per_bin=20,limb_wigth=24, allp_num=1360,debug=False):
     from time import time
     import datetime
     if debug:
@@ -399,7 +399,9 @@ def main(peadirpath:str,savepath:str=None,dyjest=False, max_workers=int|None,max
             print(Df)
         print(f"Total time: {time() - st:.2f} sec")
     if savepath != None:
-        save_db(all_results,peadirpath,__file__.split("\\")[-1]+"_prototype",{"limb_wigth":limb_wigth,"secdiff":"diff(grad())"},savepath,dyjest=dyjest)
+        save_db(all_results,peadirpath,__file__.split("\\")[-1]+"_prototype",
+                {"limb_wigth":limb_wigth,"secdiff":"diff(grad())","max_worker":max_workers,"max_chunk(b)":max_chunk_bytes,"sample_per_bin":sample_per_bin},
+                savepath,dyjest=dyjest)
     return all_results
 
 if __name__ == "__main__":
